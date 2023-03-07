@@ -2,17 +2,14 @@ import RepoList from "@/components/RepoList";
 import { getGithubRepoByUser, getGithubUser } from "@/services/api";
 import Head from "next/head";
 import { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { SetGitProfile } from "@/redux/reducers/githubProfile";
 
 export default function Home() {
+    const {user, repo, total_repo, total_page, status} = useSelector((state) => state.gitProfile)
+    const dispatch = useDispatch()
     const [User, setUser] = useState('')
     const [IsLoading, setLoading] = useState(false)
-    const [GithubData, setGithubData] = useState({
-        user: '',
-        repo: [],
-        total_repo: 0,
-        total_page: 0,
-        status: false
-    })
     const [Params, setParams] = useState({
         per_page: 40,
         page: 1
@@ -25,23 +22,23 @@ export default function Home() {
             const data = await getGithubRepoByUser(User, Params)
             const user = await getGithubUser(User)
     
-            setGithubData({...GithubData,
+            dispatch(SetGitProfile({
                 user: user.login,
                 repo: data,
                 total_repo: user.public_repos,
                 total_page: Math.ceil(user.public_repos / Params.per_page),
                 status: true
-            })
-            // setParams({...Params, page: 1})
+            }))
+
             window.scrollTo({ top: 0, behavior: 'auto' })
         } catch (error) {
-            setGithubData({...GithubData,
+            dispatch(SetGitProfile({
                 user: '',
                 repo: [],
                 total_repo: 0,
                 total_page: 0,
                 status: false
-            })
+            }))
         }
         setLoading(false)
     }
@@ -70,16 +67,16 @@ export default function Home() {
             </div>
         
             <div className="mt-12 w-2/3 m-auto border-current p-4">
-                {GithubData.status ? 
+                {status ? 
                     <div>
-                        <h3 className="text-2xl font-medium">Github User {GithubData.user}</h3>
-                        <p>Repository ({GithubData.total_repo})</p>
+                        <h3 className="text-2xl font-medium">Github User {user}</h3>
+                        <p>Repository ({total_repo})</p>
                     </div>
                 : <h3 className="text-2xl font-medium text-center">Github User Not Found</h3>
                 }
 
-                {GithubData.repo.length ?
-                    GithubData.repo.map((v, k) => {
+                {repo.length ?
+                    repo.map((v, k) => {
                         return (
                             <div key={k}>
                                 <RepoList data={v} />
@@ -89,7 +86,7 @@ export default function Home() {
                 : ''
                 }
 
-                {GithubData.total_page > 1 &&
+                {total_page > 1 &&
                     <div className="flex justify-center gap-4 mt-6">
                         <div>
                             <button className="btn btn-sm md:btn-md gap-2 normal-case lg:gap-3" disabled={Params.page === 1 || IsLoading} onClick={() => setParams({...Params, page: (Params.page - 1)})}>
@@ -100,7 +97,7 @@ export default function Home() {
                             </button>
                         </div>
                         <div>
-                            <button className="btn btn-sm md:btn-md gap-2 normal-case lg:gap-3" disabled={Params.page === GithubData.total_page || IsLoading} onClick={() => setParams({...Params, page: (Params.page + 1)})}>
+                            <button className="btn btn-sm md:btn-md gap-2 normal-case lg:gap-3" disabled={Params.page === total_page || IsLoading} onClick={() => setParams({...Params, page: (Params.page + 1)})}>
                                 <div className="flex flex-col items-end">
                                     <span>Next</span>
                                 </div> 
